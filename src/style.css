@@ -1,0 +1,402 @@
+:root {
+  --ink: #0a0908;
+  --ink-2: #141210;
+  --ink-3: #1c1915;
+  --bone: #f3ebe0;
+  --bone-dim: #c9c0b3;
+  --ember: #e86b2a;
+  --ember-deep: #9a3d14;
+  --line: #2c261f;
+  --danger: #c44a2a;
+  --ok: #c9d4b8;
+  --pad: 16px;
+  --tap: 52px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--ink);
+  color: var(--bone);
+  font-family: Barlow, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+#app {
+  min-height: 100dvh;
+  min-height: 100svh;
+  display: flex;
+  justify-content: center;
+}
+
+.shell {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  min-height: 100svh;
+  padding: calc(12px + env(safe-area-inset-top)) var(--pad)
+    calc(18px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background:
+    linear-gradient(180deg, rgba(232, 107, 42, 0.05), transparent 28%),
+    var(--ink);
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.brand {
+  font-family: "Barlow Condensed", Barlow, sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.meta {
+  display: flex;
+  gap: 12px;
+  color: var(--bone-dim);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.meta strong {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+.ember {
+  color: var(--ember);
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Barlow Condensed", Barlow, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+h1 {
+  font-size: 56px;
+  line-height: 0.9;
+  letter-spacing: 0.08em;
+}
+
+h2 {
+  font-size: 28px;
+}
+
+.lede {
+  color: var(--bone-dim);
+  margin: 0;
+}
+
+.grow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  padding: 14px;
+}
+
+.card + .card {
+  margin-top: 0;
+}
+
+.fighter-name {
+  font-family: "Barlow Condensed", Barlow, sans-serif;
+  font-size: 32px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 84px 1fr 36px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.track {
+  height: 8px;
+  background: var(--ink-3);
+  border: 1px solid var(--line);
+}
+
+.fill {
+  height: 100%;
+  background: var(--bone);
+}
+
+.fill.ember {
+  background: var(--ember);
+}
+
+.fill.warn {
+  background: var(--danger);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stat {
+  border: 1px solid var(--line);
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.stat b {
+  display: block;
+  font-family: "Barlow Condensed", Barlow, sans-serif;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.stat span {
+  color: var(--bone-dim);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.note {
+  color: var(--bone-dim);
+  font-size: 14px;
+  margin: 0;
+}
+
+.note.warn {
+  color: #e0b8a8;
+}
+
+.banner {
+  border: 1px solid var(--ember-deep);
+  background: #1a100c;
+  color: var(--bone);
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn {
+  min-height: var(--tap);
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  padding: 12px 14px;
+  text-align: left;
+  letter-spacing: 0.04em;
+}
+
+.btn:active {
+  background: var(--ink-3);
+}
+
+.btn[disabled] {
+  opacity: 0.4;
+}
+
+.btn .sub {
+  display: block;
+  color: var(--bone-dim);
+  font-size: 13px;
+  letter-spacing: 0;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.btn.primary {
+  background: var(--ember);
+  border-color: var(--ember);
+  color: var(--ink);
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: "Barlow Condensed", Barlow, sans-serif;
+  font-size: 20px;
+}
+
+.btn.primary:active {
+  background: #d25e20;
+}
+
+.btn.ghost {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: "Barlow Condensed", Barlow, sans-serif;
+  font-size: 18px;
+}
+
+.title-screen {
+  justify-content: flex-end;
+  padding-bottom: 28px;
+}
+
+.title-mark {
+  width: 48px;
+  height: 4px;
+  background: var(--ember);
+  margin-bottom: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+
+.field input {
+  min-height: var(--tap);
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  padding: 0 12px;
+}
+
+.field input:focus {
+  outline: 2px solid var(--ember);
+  outline-offset: 1px;
+}
+
+.opp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opp {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.opp.next {
+  border-color: var(--ember);
+}
+
+.opp.done {
+  opacity: 0.45;
+}
+
+.opp .who {
+  font-family: "Barlow Condensed", Barlow, sans-serif;
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.opp .tag {
+  color: var(--bone-dim);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fight-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: end;
+}
+
+.fight-head h3 {
+  font-size: 22px;
+}
+
+.fight-head .vs {
+  color: var(--ember);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  padding-bottom: 4px;
+}
+
+.right {
+  text-align: right;
+}
+
+.log {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+}
+
+.result-cash {
+  font-family: "Barlow Condensed", Barlow, sans-serif;
+  font-size: 40px;
+  letter-spacing: 0.04em;
+  color: var(--ember);
+  margin: 0;
+}
+
+.tiny {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
