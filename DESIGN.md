@@ -37,7 +37,7 @@ Strength / grit / stamina cap at 20. Start at 6 / 6 / 6, $36, day 1.
 
 Training: +2 to one stat, +14 fatigue, 1 action.  
 Rest: −22 fatigue, +16 condition, 1 action.  
-Clinic: $22, −40 fatigue, +45 condition, 0 actions.  
+Clinic: $22, −40 fatigue, +45 condition, 0 actions. Only shows when you're actually hurt or cooked.  
 Night: −10 fatigue, +8 condition (more if you were wrecked).
 
 Fight lock: condition < 35 or fatigue > 84.

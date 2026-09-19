@@ -17,9 +17,16 @@ import {
 import {
   CLINIC_COST,
   FIGHT_CONDITION_MIN,
+  FIGHT_FATIGUE_MAX,
   type GameState,
   type Screen,
 } from "../game/types";
+
+function needsClinic(s: GameState): boolean {
+  const wrecked =
+    s.fighter.condition < FIGHT_CONDITION_MIN || s.fighter.fatigue > FIGHT_FATIGUE_MAX;
+  return s.fighter.condition < 50 || s.fighter.fatigue > 70 || (wrecked && s.actionsLeft > 0);
+}
 
 function esc(value: string): string {
   return value.replace(/[&<>"']/g, (ch) => {
@@ -119,10 +126,11 @@ function hubView(s: GameState): string {
           Rest
           <span class="sub">Drop fatigue. Patch up.</span>
         </button>
+        ${needsClinic(s) ? `
         <button class="btn" data-act="clinic" ${s.cash >= CLINIC_COST ? "" : "disabled"}>
           Clinic · $${CLINIC_COST}
           <span class="sub">Doesn't spend an action.</span>
-        </button>
+        </button>` : ""}
         <button class="btn primary" data-act="end">End day</button>
       </div>
     </section>
