@@ -1,0 +1,18 @@
+{
+  "name": "Last Whistle",
+  "short_name": "Whistle",
+  "description": "A dockyard fighting management game. Train, work, and climb the harbor circuit.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0c1210",
+  "theme_color": "#0c1210",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
