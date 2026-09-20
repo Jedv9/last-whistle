@@ -96,7 +96,7 @@
 
   function heroShrink(loc) {
     if (loc === "bunk") return 0.38;
-    if (loc === "canteen" || loc === "crane") return 0.78;
+    if (loc === "canteen" || loc === "crane") return 0.92;
     if (loc === "docks" || loc === "diner") return 0.66;
     if (loc === "rustgym" || loc === "alley") return 0.52;
     return 0.48;
@@ -351,12 +351,6 @@
     const g = fit(canvas);
     const cam = mapCam();
     R(g, 0, 0, W, H, backdrop("map"));
-    g.save();
-    applyCam(g, { scale: 1.28, cx: 50, cy: 40 });
-    blit(g, "map");
-    g.restore();
-    g.fillStyle = "rgba(10, 36, 64, 0.22)";
-    g.fillRect(0, 0, W, H);
     g.save();
     applyCam(g, cam);
     blit(g, "map");
