@@ -95,9 +95,11 @@
   }
 
   function heroShrink(loc) {
-    if (loc === "bunk") return 0.36;
-    if (loc === "canteen" || loc === "crane") return 0.42;
-    return 0.4;
+    if (loc === "bunk") return 0.38;
+    if (loc === "canteen" || loc === "crane") return 0.78;
+    if (loc === "docks" || loc === "diner") return 0.66;
+    if (loc === "rustgym" || loc === "alley") return 0.52;
+    return 0.48;
   }
 
   function fig(g, x, y, pal, pose, sc, dir) {
@@ -285,6 +287,12 @@
     const cam = roomCam();
     R(g, 0, 0, W, H, backdrop(loc));
     g.save();
+    applyCam(g, { scale: 1.16, cx: 50, cy: 46 });
+    blit(g, ART[key] ? key : "bunk");
+    g.restore();
+    g.fillStyle = "rgba(8, 10, 14, 0.2)";
+    g.fillRect(0, 0, W, H);
+    g.save();
     applyCam(g, cam);
     blit(g, ART[key] ? key : "bunk");
     if (loc === "bunk" && s.props && s.props.tvOn) {
@@ -344,6 +352,12 @@
     const cam = mapCam();
     R(g, 0, 0, W, H, backdrop("map"));
     g.save();
+    applyCam(g, { scale: 1.28, cx: 50, cy: 40 });
+    blit(g, "map");
+    g.restore();
+    g.fillStyle = "rgba(10, 36, 64, 0.22)";
+    g.fillRect(0, 0, W, H);
+    g.save();
     applyCam(g, cam);
     blit(g, "map");
     const unlocked = (state && state.unlocked) || [];
@@ -375,7 +389,7 @@
     g.clearRect(0, 0, w, h);
     const pal = youPal({ background: bg });
     const jab = on && Date.now() % 400 < 200;
-    fig(g, 6, 4, pal, jab ? "punch" : "idle", 2.15, 1);
+    fig(g, 5, 2, pal, jab ? "punch" : "idle", 2.55, 1);
   }
 
   function lineup(canvas, draft) {
@@ -390,9 +404,9 @@
     const pose = jab ? "punch" : walk ? "walk" : "idle";
     g.fillStyle = "rgba(201,162,39,0.55)";
     g.beginPath();
-    g.ellipse(480, 438, 46, 10, 0, 0, Math.PI * 2);
+    g.ellipse(470, 448, 70, 14, 0, 0, Math.PI * 2);
     g.fill();
-    drawHero(g, 480, 430, pose, 1, youPal({ background: bg }), 0.72);
+    drawHero(g, 470, 438, pose, 1, youPal({ background: bg }), 1.15);
   }
 
   function ring(canvas, fight) {

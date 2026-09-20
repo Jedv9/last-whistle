@@ -636,8 +636,9 @@ test("only story-advancing hotspots get marks", () => {
 
 test("room camera is zoomed out and map is tighter still", () => {
   const R = sandbox.LW_ROOMS;
-  assert(R.CAM.room.scale < 0.9, "room zoomed out");
+  assert(R.CAM.room.scale <= 0.86, "room zoomed out");
   assert(R.CAM.map.scale < R.CAM.room.scale, "map more zoomed out than rooms");
+  assert(R.CAM.map.scale <= 0.76, "map hub pulled back");
   const p = R.camPoint(R.CAM.room, 0, 0);
   assert(p.x > 0 && p.y > 0, "room origin inset");
   const world = R.uncamPoint(R.CAM.room, p.x, p.y);

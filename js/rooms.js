@@ -40,8 +40,8 @@
 
   // World-space cameras. Rooms stay readable; map reads as a zoomed-out hub.
   const CAM = {
-    room: { scale: 0.82, cx: 50, cy: 52 },
-    map: { scale: 0.6, cx: 50, cy: 48 },
+    room: { scale: 0.84, cx: 50, cy: 52 },
+    map: { scale: 0.74, cx: 50, cy: 46 },
   };
 
   const BACKDROPS = {
