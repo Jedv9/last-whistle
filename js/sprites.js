@@ -72,6 +72,34 @@
     return false;
   }
 
+  function applyCam(g, cam) {
+    cam = cam || { scale: 1, cx: 50, cy: 50 };
+    const cx = (cam.cx / 100) * W;
+    const cy = (cam.cy / 100) * H;
+    g.translate(cx, cy);
+    g.scale(cam.scale, cam.scale);
+    g.translate(-cx, -cy);
+  }
+
+  function roomCam() {
+    return (root.LW_ROOMS && root.LW_ROOMS.CAM && root.LW_ROOMS.CAM.room) || { scale: 1, cx: 50, cy: 50 };
+  }
+
+  function mapCam() {
+    return (root.LW_ROOMS && root.LW_ROOMS.CAM && root.LW_ROOMS.CAM.map) || { scale: 1, cx: 50, cy: 50 };
+  }
+
+  function backdrop(loc) {
+    const map = (root.LW_ROOMS && root.LW_ROOMS.BACKDROPS) || {};
+    return map[loc] || "#141820";
+  }
+
+  function heroShrink(loc) {
+    if (loc === "bunk") return 0.36;
+    if (loc === "canteen" || loc === "crane") return 0.42;
+    return 0.4;
+  }
+
   function fig(g, x, y, pal, pose, sc, dir) {
     sc = sc || 2.2;
     dir = dir == null ? 1 : dir;
@@ -254,6 +282,10 @@
     const g = fit(canvas);
     const s = state || {};
     const key = loc === "rustgym" ? "rustgym" : loc;
+    const cam = roomCam();
+    R(g, 0, 0, W, H, backdrop(loc));
+    g.save();
+    applyCam(g, cam);
     blit(g, ART[key] ? key : "bunk");
     if (loc === "bunk" && s.props && s.props.tvOn) {
       const pulse = 0.16 + (((Date.now() / 180) | 0) % 2 ? 0.08 : 0);
@@ -282,36 +314,16 @@
     }
     const rooms = root.LW_ROOMS;
     if (rooms && loc !== "map" && !(s.story || s.result || s.screen === "fridge")) {
-      const list = rooms.visibleHotspots ? rooms.visibleHotspots(s, loc) : rooms.HOTSPOTS[loc] || [];
+      const list = rooms.markedHotspots ? rooms.markedHotspots(s, loc) : [];
       list.forEach(function (h) {
-        let kind = h.icon;
-        if (!kind && h.act && root.LW_CONTENT) {
-          const act = root.LW_CONTENT.ACTIVITIES.find(function (a) {
-            return a.id === h.act;
-          });
-          const tag = act && act.tag;
-          kind =
-            tag === "Train" || tag === "Work" || tag === "Gym"
-              ? "train"
-              : tag === "Eat" || tag === "Shop"
-              ? "eat"
-              : tag === "Rest"
-              ? "rest"
-              : tag === "Story" || tag === "Fight"
-              ? "story"
-              : tag === "Look" || tag === "Talk"
-              ? "look"
-              : null;
-        }
-        if (!kind) kind = h.bang ? "story" : h.nav ? "door" : "look";
-        mark(g, ((h.x + h.w / 2) / 100) * W, ((h.y + 2) / 100) * H, kind);
+        mark(g, ((h.x + h.w / 2) / 100) * W, ((h.y + 2) / 100) * H, "story");
       });
     }
     const a = s.actor;
     if (a && loc !== "map") {
       const ax = (a.x / 100) * W;
       const ay = (a.y / 100) * H;
-      const box = drawHero(g, ax, ay, a.pose || "idle", a.dir == null ? 1 : a.dir, youPal(s), loc === "bunk" ? 0.56 : 1);
+      const box = drawHero(g, ax, ay, a.pose || "idle", a.dir == null ? 1 : a.dir, youPal(s), heroShrink(loc));
       if (a.busyLeft > 0) hourglass(g, ax, box.top - 6);
       (a.fx || []).forEach(function (f) {
         const age = (Date.now() - f.t) / 900;
@@ -324,10 +336,15 @@
         g.globalAlpha = 1;
       });
     }
+    g.restore();
   }
 
   function map(canvas, state) {
     const g = fit(canvas);
+    const cam = mapCam();
+    R(g, 0, 0, W, H, backdrop("map"));
+    g.save();
+    applyCam(g, cam);
     blit(g, "map");
     const unlocked = (state && state.unlocked) || [];
     const spots = (root.LW_ROOMS && root.LW_ROOMS.MAP_SPOTS) || [];
@@ -336,10 +353,46 @@
       g.fillStyle = "rgba(8,10,14,0.5)";
       g.fillRect((sp.x / 100) * W, (sp.y / 100) * H, (sp.w / 100) * W, (sp.h / 100) * H);
     });
+    g.restore();
     if (state && (state.hour != null ? state.hour : 8) >= 20) {
       g.fillStyle = "rgba(12, 18, 48, 0.18)";
       g.fillRect(0, 0, W, H);
     }
+  }
+
+  function figCard(canvas, bg, on) {
+    if (!canvas) return;
+    const dpr = Math.min(2, root.devicePixelRatio || 1);
+    const w = 40;
+    const h = 62;
+    if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+    }
+    const g = canvas.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, w, h);
+    const pal = youPal({ background: bg });
+    const jab = on && Date.now() % 400 < 200;
+    fig(g, 6, 4, pal, jab ? "punch" : "idle", 2.15, 1);
+  }
+
+  function lineup(canvas, draft) {
+    if (!canvas) return;
+    const g = fit(canvas);
+    const bg = (draft && draft.bg) || "dock";
+    blit(g, "docks");
+    g.fillStyle = "rgba(8,12,16,0.28)";
+    g.fillRect(0, 0, W, H);
+    const jab = draft && draft.jabAt && Date.now() - draft.jabAt < 700;
+    const walk = !jab && ((Date.now() / 380) | 0) % 2;
+    const pose = jab ? "punch" : walk ? "walk" : "idle";
+    g.fillStyle = "rgba(201,162,39,0.55)";
+    g.beginPath();
+    g.ellipse(480, 438, 46, 10, 0, 0, Math.PI * 2);
+    g.fill();
+    drawHero(g, 480, 430, pose, 1, youPal({ background: bg }), 0.72);
   }
 
   function ring(canvas, fight) {
@@ -401,5 +454,5 @@
     fig(g, 420, 140, mapP[who] || youPal(root.LW_STATE), "idle", 5.5, 1);
   }
 
-  root.LW_SPRITES = { scene, map, ring, skyline, portrait, fig, youPal, W, H };
+  root.LW_SPRITES = { scene, map, ring, skyline, portrait, fig, youPal, lineup, figCard, W, H };
 })(typeof window !== "undefined" ? window : global);

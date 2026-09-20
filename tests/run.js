@@ -241,12 +241,13 @@ test("walk to a hotspot then haul", () => {
   E.travel(s, "docks");
   drainStory(s);
   const money = s.money;
-  E.queueWalk(s, { kind: "act", id: "haul", x: 42, y: 48 });
+  E.queueWalk(s, { kind: "act", id: "haul", x: 44, y: 76 });
   let n = 0;
   while (n++ < 120 && !s.result) E.tickActor(s, 0.05);
   assert(s.result, "result after walk");
   assert(s.money > money, "paid after walk");
-  assert(Math.abs(s.actor.x - 42) < 2, "stood on crates");
+  assert(Math.abs(s.actor.x - 44) < 3, "stood in front of crates");
+  assert(!sandbox.LW_ROOMS.blocked("docks", s.actor.x, s.actor.y), "did not clip crates");
 });
 
 test("home inspect objects talk in the room", () => {
@@ -587,6 +588,60 @@ test("Brant grit line only if you clocked in cold", () => {
     else E.storyContinue(s2, null);
   }
   assert(!texts.some((t) => /on time/i.test(t)), "no grit compliment if you lingered on the tape");
+});
+
+test("stand points stay walkable and furniture blocks", () => {
+  const R = sandbox.LW_ROOMS;
+  Object.keys(R.HOTSPOTS).forEach(function (loc) {
+    R.HOTSPOTS[loc].forEach(function (h) {
+      if (!h.stand) return;
+      assert(!R.blocked(loc, h.stand.x, h.stand.y), loc + " stand " + (h.act || h.nav) + " walkable");
+    });
+  });
+  assert(R.blocked("bunk", 48, 68), "coffee table blocks");
+  assert(R.blocked("docks", 34, 36), "crate stack blocks");
+  assert(!R.blocked("bunk", 48, 82), "front floor open");
+  const dest = R.nearestWalkable("bunk", 48, 66);
+  assert(!R.blocked("bunk", dest.x, dest.y), "snap out of table");
+  assert(dest.y > 70, "snap prefers the floor");
+});
+
+test("walking cannot clip through the bunk table", () => {
+  const s = E.createState({ name: "Ren", background: "dock", seed: 11 });
+  s.flags.intro = true;
+  s.flags.ev_intro = true;
+  s.actor.x = 30;
+  s.actor.y = 82;
+  E.queueWalk(s, { kind: "idle", x: 48, y: 66 });
+  let n = 0;
+  while (n++ < 80 && s.actor.walking) E.tickActor(s, 0.05);
+  assert(!sandbox.LW_ROOMS.blocked("bunk", s.actor.x, s.actor.y), "ended walkable");
+  assert(s.actor.y >= 72, "stayed on the floor");
+});
+
+test("only story-advancing hotspots get marks", () => {
+  const R = sandbox.LW_ROOMS;
+  const s = E.createState({ name: "Ren", background: "dock", seed: 2 });
+  s.flags.intro = true;
+  const home = R.markedHotspots(s, "bunk");
+  assert(home.some((h) => h.act === "fridge"), "fridge is the day-1 story mark");
+  assert(home.some((h) => h.act === "replay"), "tape is a story mark");
+  assert(!home.some((h) => h.act === "tv" || h.act === "home_bag" || h.nav === "map"), "no clutter marks");
+  s.flags.ateStart = true;
+  const after = R.markedHotspots(s, "bunk");
+  assert(!after.some((h) => h.act === "fridge"), "fridge mark drops after breakfast");
+  const docks = R.markedHotspots(s, "docks");
+  assert(!docks.some((h) => h.act === "haul"), "work crates stay unmarked");
+});
+
+test("room camera is zoomed out and map is tighter still", () => {
+  const R = sandbox.LW_ROOMS;
+  assert(R.CAM.room.scale < 0.9, "room zoomed out");
+  assert(R.CAM.map.scale < R.CAM.room.scale, "map more zoomed out than rooms");
+  const p = R.camPoint(R.CAM.room, 0, 0);
+  assert(p.x > 0 && p.y > 0, "room origin inset");
+  const world = R.uncamPoint(R.CAM.room, p.x, p.y);
+  assert(Math.abs(world.x) < 0.2 && Math.abs(world.y) < 0.2, "cam invert");
 });
 
 console.log("\n" + passed + " tests passed");

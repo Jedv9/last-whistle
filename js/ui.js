@@ -72,13 +72,26 @@
     );
   }
 
+  function hitBox(cam, h) {
+    const rooms = root.LW_ROOMS;
+    if (rooms && rooms.camHit) return rooms.camHit(cam, h);
+    return h;
+  }
+
+  function hitStyle(cam, h) {
+    const r = hitBox(cam, h);
+    return "left:" + r.x + "%;top:" + r.y + "%;width:" + r.w + "%;height:" + r.h + "%";
+  }
+
   function spotsHtml(s) {
     if (s.story || s.result) return "";
     if (s.screen === "fridge") return "";
     if (s.workout) return "";
     if (s.actor && (s.actor.walking || s.actor.busyLeft > 0)) return "";
+    const rooms = root.LW_ROOMS;
     if (s.screen === "map") {
-      return root.LW_ROOMS.MAP_SPOTS.map(function (h) {
+      const cam = rooms.camFor ? rooms.camFor("map") : { scale: 1, cx: 50, cy: 50 };
+      return rooms.MAP_SPOTS.map(function (h) {
         const open = s.unlocked.indexOf(h.travel) >= 0;
         return (
           '<button class="hot" data-travel="' +
@@ -86,28 +99,26 @@
           '" data-label="' +
           esc(h.label) +
           (open ? "" : " (locked)") +
-          '" style="left:' +
-          h.x +
-          "%;top:" +
-          h.y +
-          "%;width:" +
-          h.w +
-          "%;height:" +
-          h.h +
-          '%"' +
+          '" style="' +
+          hitStyle(cam, h) +
+          '"' +
           (open ? "" : " disabled") +
           "></button>"
         );
       }).join("");
     }
-    const list = (root.LW_ROOMS.visibleHotspots ? root.LW_ROOMS.visibleHotspots(s, s.loc) : root.LW_ROOMS.HOTSPOTS[s.loc]) || [];
+    const cam = rooms.camFor ? rooms.camFor("room") : { scale: 1, cx: 50, cy: 50 };
+    const list = (rooms.visibleHotspots ? rooms.visibleHotspots(s, s.loc) : rooms.HOTSPOTS[s.loc]) || [];
     return list
       .map(function (h) {
+        const story = rooms.isStoryMark && rooms.isStoryMark(s, h);
+        const wx = h.stand ? h.stand.x : h.x + h.w * 0.5;
+        const wy = h.stand ? h.stand.y : Math.min(92, h.y + h.h * 0.78);
         if (h.act) {
-          const wx = h.stand ? h.stand.x : h.x + h.w * 0.5;
-          const wy = h.stand ? h.stand.y : Math.min(92, h.y + h.h * 0.78);
           return (
-            '<button class="hot" data-act="' +
+            '<button class="hot' +
+            (story ? " story-hot" : "") +
+            '" data-act="' +
             h.act +
             '" data-wx="' +
             wx +
@@ -117,19 +128,11 @@
             (h.icon || "") +
             '" data-label="' +
             esc(h.label) +
-            '" style="left:' +
-            h.x +
-            "%;top:" +
-            h.y +
-            "%;width:" +
-            h.w +
-            "%;height:" +
-            h.h +
-            '%"></button>'
+            '" style="' +
+            hitStyle(cam, h) +
+            '"></button>'
           );
         }
-        const wx = h.stand ? h.stand.x : h.x + h.w * 0.5;
-        const wy = h.stand ? h.stand.y : Math.min(92, h.y + h.h * 0.78);
         return (
           '<button class="hot" data-nav="' +
           h.nav +
@@ -139,15 +142,9 @@
           wy +
           '" data-label="' +
           esc(h.label) +
-          '" style="left:' +
-          h.x +
-          "%;top:" +
-          h.y +
-          "%;width:" +
-          h.w +
-          "%;height:" +
-          h.h +
-          '%"></button>'
+          '" style="' +
+          hitStyle(cam, h) +
+          '"></button>'
         );
       })
       .join("");
@@ -427,10 +424,17 @@
     );
   }
 
+  function statBar(n) {
+    return '<div class="bg-meter"><i style="width:' + Math.round((n / 12) * 100) + '%"></i></div>';
+  }
+
   function createView(draft) {
     const bgs = root.LW_CONTENT.BACKGROUNDS;
+    const picked = bgs.find(function (b) {
+      return b.id === draft.bg;
+    }) || bgs[0];
     return (
-      '<div class="view create-view"><h1>WHO CLOCKS IN?</h1><input class="name-in" maxlength="14" value="' +
+      '<div class="view create-view"><div class="create-stage" data-jab="1"><canvas id="create-ring"></canvas></div><div class="create-dock"><h1>WHO CLOCKS IN?</h1><input class="name-in" maxlength="14" value="' +
       esc(draft.name) +
       '" placeholder="REN" onfocus="this.select()" /><div class="bg-pick">' +
       bgs
@@ -440,16 +444,38 @@
             (draft.bg === b.id ? "on" : "") +
             '" data-bg="' +
             b.id +
-            '"><b>' +
+            '"><canvas class="bg-fig" data-fig="' +
+            b.id +
+            '" width="40" height="62"></canvas><span class="bg-copy"><b>' +
             esc(b.name) +
-            "</b>" +
-            esc(b.blurb) +
-            "</button>"
+            "</b><em>" +
+            esc(b.style) +
+            "</em></span></button>"
           );
         })
         .join("") +
-      '</div><button class="btn primary" data-go="start">CLOCK IN</button><button class="btn ghost" data-go="title">BACK</button></div>'
+      '</div><div class="bg-scout"><p class="bg-blurb">' +
+      esc(picked.blurb) +
+      '</p><div class="bg-stats"><span>STR</span>' +
+      statBar(picked.stats.str) +
+      "<span>AGI</span>" +
+      statBar(picked.stats.agi) +
+      "<span>STM</span>" +
+      statBar(picked.stats.stm) +
+      "<span>TEC</span>" +
+      statBar(picked.stats.tec) +
+      '</div></div><div class="create-actions"><button class="btn primary" data-go="start">CLOCK IN</button><button class="btn ghost" data-go="title">BACK</button></div></div></div>'
     );
+  }
+
+  function paintCreate() {
+    const draft = root.LW_DRAFT || { name: "Ren", bg: "dock" };
+    const ring = document.getElementById("create-ring");
+    if (ring && root.LW_SPRITES.lineup) root.LW_SPRITES.lineup(ring, draft);
+    const figs = document.querySelectorAll("canvas.bg-fig");
+    for (let i = 0; i < figs.length; i++) {
+      if (root.LW_SPRITES.figCard) root.LW_SPRITES.figCard(figs[i], figs[i].dataset.fig, draft.bg === figs[i].dataset.fig);
+    }
   }
 
   function fightView(s) {
@@ -545,6 +571,7 @@
     }
     if (s.screen === "create") {
       mount.innerHTML = createView(root.LW_DRAFT);
+      paintCreate();
       return;
     }
     if (s.ending || s.screen === "end") {
@@ -569,7 +596,7 @@
       if (hint && t) hint.textContent = t.getAttribute("data-label");
     });
     screen.addEventListener("click", function (ev) {
-      const t = ev.target.closest("[data-go],[data-act],[data-nav],[data-bg],[data-travel],[data-choice],[data-plan],[data-fight],[data-buy],[data-equip],[data-use],[data-ack],[data-cine],[data-eat],[data-stop-workout]");
+      const t = ev.target.closest("[data-go],[data-act],[data-nav],[data-bg],[data-travel],[data-choice],[data-plan],[data-fight],[data-buy],[data-equip],[data-use],[data-ack],[data-cine],[data-eat],[data-stop-workout],[data-jab]");
       const E = root.LW_ENGINE;
       let s = root.LW_STATE;
       if (!t) {
@@ -585,10 +612,16 @@
             return;
           }
           const r = stage.getBoundingClientRect();
-          const x = ((ev.clientX - r.left) / r.width) * 100;
-          const y = ((ev.clientY - r.top) / r.height) * 100;
-          if (y < 16 || y > 94) return;
-          E.queueWalk(s, { kind: "idle", x: x, y: Math.max(48, y) });
+          let x = ((ev.clientX - r.left) / r.width) * 100;
+          let y = ((ev.clientY - r.top) / r.height) * 100;
+          const rooms = root.LW_ROOMS;
+          if (rooms && rooms.uncamPoint) {
+            const world = rooms.uncamPoint(rooms.camFor("room"), x, y);
+            x = world.x;
+            y = world.y;
+          }
+          if (y < 16 || y > 98) return;
+          E.queueWalk(s, { kind: "idle", x: x, y: y });
           render();
         }
         return;
@@ -630,8 +663,21 @@
         render();
         return;
       }
+      if (t.dataset.jab) {
+        if (root.LW_DRAFT) root.LW_DRAFT.jabAt = Date.now();
+        root.LW_AUDIO.ok();
+        paintCreate();
+        return;
+      }
       if (t.dataset.bg) {
+        const same = root.LW_DRAFT.bg === t.dataset.bg;
         root.LW_DRAFT.bg = t.dataset.bg;
+        root.LW_DRAFT.jabAt = Date.now();
+        root.LW_AUDIO.ok();
+        if (same) {
+          paintCreate();
+          return;
+        }
         render();
         return;
       }
@@ -738,5 +784,5 @@
     });
   }
 
-  root.LW_UI = { render, bind, cineAdvance, armCine };
+  root.LW_UI = { render, bind, cineAdvance, armCine, paintCreate };
 })(typeof window !== "undefined" ? window : global);

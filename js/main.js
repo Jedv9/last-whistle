@@ -46,7 +46,9 @@
           }
         }
         if (s && S) {
-          if (!s.day || s.screen === "title") {
+          if (s.screen === "create") {
+            if (LW_UI.paintCreate) LW_UI.paintCreate();
+          } else if (!s.day || s.screen === "title") {
             const sky = document.getElementById("sky");
             if (sky) S.skyline(sky);
           } else if (s.screen === "fight" && s.fight) {

@@ -85,7 +85,8 @@
 
   function spawnActor(loc) {
     const rooms = root.LW_ROOMS;
-    const p = (rooms && rooms.SPAWNS && rooms.SPAWNS[loc]) || { x: 50, y: 64 };
+    let p = (rooms && rooms.SPAWNS && rooms.SPAWNS[loc]) || { x: 50, y: 64 };
+    if (rooms && rooms.nearestWalkable) p = rooms.nearestWalkable(loc, p.x, p.y);
     return { x: p.x, y: p.y, dir: 1, pose: "idle", walking: false, job: null, busyLeft: 0, fx: [] };
   }
 
@@ -523,13 +524,21 @@
   function queueWalk(state, job) {
     if (state.workout) stopWorkout(state);
     const a = ensureActor(state);
+    const rooms = root.LW_ROOMS;
+    let tx = job.x;
+    let ty = job.y;
+    if (rooms && rooms.nearestWalkable && typeof tx === "number") {
+      const dest = rooms.nearestWalkable(state.loc, tx, ty);
+      tx = dest.x;
+      ty = dest.y;
+    }
     a.job = job;
-    a.tx = job.x;
-    a.ty = job.y;
+    a.tx = tx;
+    a.ty = ty;
     a.walking = true;
     a.pose = "walk";
     a.busyLeft = 0;
-    if (typeof job.x === "number" && job.x < a.x) a.dir = -1;
+    if (typeof tx === "number" && tx < a.x) a.dir = -1;
     else a.dir = 1;
   }
 
@@ -571,12 +580,21 @@
     const dist = Math.sqrt(dx * dx + dy * dy);
     const speed = 70;
     const step = speed * (dt || 0.016);
+    const rooms = root.LW_ROOMS;
     if (dist <= Math.max(1.6, step)) {
+      if (rooms && rooms.blocked && rooms.blocked(state.loc, a.tx, a.ty)) {
+        a.walking = false;
+        a.pose = "idle";
+        if (dist < 8) finishJob(state);
+        else {
+          a.job = null;
+        }
+        return "render";
+      }
       a.x = a.tx;
       a.y = a.ty;
       a.walking = false;
       const job = a.job;
-      const rooms = root.LW_ROOMS;
       const pose = job && job.kind === "act" && rooms && rooms.POSES ? rooms.POSES[job.id] : null;
       if (job && job.kind === "act" && isWorkout(job.id)) {
         startWorkout(state, job.id);
@@ -593,8 +611,21 @@
       finishJob(state);
       return "render";
     }
-    a.x += (dx / dist) * step;
-    a.y += (dy / dist) * step;
+    const nx = a.x + (dx / dist) * step;
+    const ny = a.y + (dy / dist) * step;
+    const next = rooms && rooms.resolveStep ? rooms.resolveStep(state.loc, a.x, a.y, nx, ny) : { x: nx, y: ny };
+    if (next.x === a.x && next.y === a.y) {
+      a.walking = false;
+      a.pose = "idle";
+      if (dist < 10) {
+        finishJob(state);
+        return "render";
+      }
+      a.job = null;
+      return "render";
+    }
+    a.x = next.x;
+    a.y = next.y;
     a.dir = dx < 0 ? -1 : 1;
     a.pose = "walk";
     return "paint";
