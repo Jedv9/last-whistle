@@ -1,4 +1,5 @@
 using UnityEngine;
+using LastWhistle.Core;
 
 namespace LastWhistle.World
 {
@@ -17,6 +18,7 @@ namespace LastWhistle.World
         System.Action _onArrive;
         Rigidbody2D _rb;
         Camera _cam;
+        float _poseUntil;
 
         void Awake()
         {
@@ -38,7 +40,6 @@ namespace LastWhistle.World
         public void GoToPct(float px, float py, System.Action onArrive = null)
         {
             if (space == null) return;
-            // slide to nearest walkable-ish stand
             for (int i = 0; i < 12; i++)
             {
                 float nx = px + (i % 2 == 0 ? i : -i) * 0.8f;
@@ -51,14 +52,13 @@ namespace LastWhistle.World
         void Update()
         {
             if (_cam == null) _cam = Camera.main;
-            if (Input.GetMouseButtonDown(0) && !HotspotClickGuard.Blocked)
+            if (Input.GetMouseButtonDown(0) && !HotspotClickGuard.Blocked && !UiKit.PointerOverUi())
             {
-                // empty floor click: walk there if convertible
                 var w = _cam.ScreenToWorldPoint(Input.mousePosition);
                 GoToWorld(new Vector2(w.x, w.y), null);
             }
 
-            if (body != null)
+            if (body != null && Time.time > _poseUntil)
             {
                 _anim += Time.deltaTime * (_moving ? 8f : 0f);
                 if (_moving && walkA != null && walkB != null)
@@ -86,6 +86,7 @@ namespace LastWhistle.World
         public void SetPose(string pose)
         {
             if (body == null) return;
+            _poseUntil = Time.time + 1.6f;
             switch (pose)
             {
                 case "punch": if (punch) body.sprite = punch; break;

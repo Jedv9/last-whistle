@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using LastWhistle.Core;
 
 namespace LastWhistle.UI
 {
@@ -8,9 +9,10 @@ namespace LastWhistle.UI
         public Text label;
         void Update()
         {
-            var clock = LastWhistle.Core.GameClock.Instance;
-            var stats = LastWhistle.Core.FighterStats.Instance;
-            if (label == null || clock == null) return;
+            if (label == null) return;
+            var clock = GameClock.Instance;
+            var stats = FighterStats.Instance;
+            if (clock == null) return;
             string money = stats != null ? $"$ {stats.money}" : "";
             label.text = $"{clock.Stamp()}   {money}";
         }

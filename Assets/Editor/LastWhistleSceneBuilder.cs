@@ -20,12 +20,18 @@ public static class LastWhistleSceneBuilder
         BuildRoom("Alley", "alley", "Assets/Art/alley.png");
         BuildRoom("Arena", "arena", "Assets/Art/arena.png");
         BuildRoom("Diner", "diner", "Assets/Art/diner.png");
+        BuildRoom("Canteen", "canteen", "Assets/Art/canteen.png");
+        BuildRoom("Market", "market", "Assets/Art/market.png");
+        BuildRoom("Temple", "temple", "Assets/Art/temple.png");
+        BuildRoom("Crane", "crane", "Assets/Art/crane.png");
+        BuildRoom("Barge", "barge", "Assets/Art/barge.png");
         BuildMap();
         BuildFight();
         BuildTitle();
         EditorBuildSettings.scenes = new[]
         {
-            S("Title"), S("Map"), S("Bunkhouse"), S("Gym"), S("Docks"), S("Alley"), S("Arena"), S("Diner"), S("Fight")
+            S("Title"), S("Map"), S("Bunkhouse"), S("Gym"), S("Docks"), S("Alley"), S("Arena"), S("Diner"),
+            S("Canteen"), S("Market"), S("Temple"), S("Crane"), S("Barge"), S("Fight")
         };
         AssetDatabase.SaveAssets();
         Debug.Log("Last Whistle: all scenes built.");
@@ -55,10 +61,10 @@ public static class LastWhistleSceneBuilder
     static void BuildTitle()
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        NewCam(5f);
-        new GameObject("TitleUI").AddComponent<LastWhistle.UI.TitleController>();
-        new GameObject("HUD").AddComponent<PunchClubHud>();
-        new GameObject("Dialogue").AddComponent<DialogueBanner>();
+        var cam = NewCam(5f);
+        MakeBackdrop("Assets/Art/cine_01_harbor.png", cam, 0.95f);
+        new GameObject("TitleUI").AddComponent<TitleController>();
+        EnsureManagers();
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/Title.unity");
     }
 
@@ -74,9 +80,7 @@ public static class LastWhistleSceneBuilder
         foreach (var hs in RoomCatalog.MapSpots())
             MakeHotspot(hs, "map", null, space);
 
-        // invisible player not needed on map — clicks on spots travel
-        new GameObject("HUD").AddComponent<PunchClubHud>();
-        new GameObject("Dialogue").AddComponent<DialogueBanner>();
+        new GameObject("MapDirector").AddComponent<MapDirector>();
         EnsureManagers();
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/Map.unity");
     }
@@ -85,10 +89,8 @@ public static class LastWhistleSceneBuilder
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var cam = NewCam(5f);
-        MakeBackdrop("Assets/Art/ring.png", cam, 0.9f);
+        MakeBackdrop("Assets/Art/ring.png", cam, 0.92f);
         new GameObject("Fight").AddComponent<FightController>();
-        new GameObject("HUD").AddComponent<PunchClubHud>();
-        new GameObject("Dialogue").AddComponent<DialogueBanner>();
         EnsureManagers();
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/Fight.unity");
     }
@@ -102,7 +104,6 @@ public static class LastWhistleSceneBuilder
         space.backdrop = bg.GetComponent<SpriteRenderer>();
         space.camScale = 0.84f;
 
-        // solids as invisible blockers in world space
         foreach (var solid in RoomCatalog.Solids(locId))
         {
             var go = new GameObject("Solid");
@@ -138,8 +139,15 @@ public static class LastWhistleSceneBuilder
         foreach (var hs in RoomCatalog.Hotspots(locId))
             MakeHotspot(hs, locId, walk, space);
 
-        new GameObject("HUD").AddComponent<PunchClubHud>();
-        new GameObject("Dialogue").AddComponent<DialogueBanner>();
+        if (locId == "bunk")
+        {
+            var juno = new GameObject("JunoPortrait");
+            var jsr = juno.AddComponent<SpriteRenderer>();
+            jsr.sprite = LoadSprite("Assets/Art/juno_idle.png");
+            jsr.sortingOrder = 5;
+            jsr.color = new Color(1, 1, 1, 0.0f);
+        }
+
         EnsureManagers();
         EditorSceneManager.SaveScene(scene, $"Assets/Scenes/{sceneName}.unity");
     }
@@ -151,17 +159,14 @@ public static class LastWhistleSceneBuilder
         var size = space.PctSizeToWorld(Mathf.Max(hs.w, 6f), Mathf.Max(hs.h, 6f));
         go.transform.position = center;
         var box = go.AddComponent<BoxCollider2D>();
-        box.isTrigger = true;
-        box.size = size;
-        // kinematic rigidbody so OnMouseDown works reliably with triggers sometimes — use collider non-trigger for mouse
         box.isTrigger = false;
+        box.size = size;
         var rb = go.AddComponent<Rigidbody2D>();
         rb.bodyType = RigidbodyType2D.Kinematic;
         var wh = go.AddComponent<WorldHotspot>();
         wh.data = hs;
         wh.walker = walk;
         wh.locationId = loc;
-        // visual hint only for story bangs
         if (hs.bang)
         {
             var marker = new GameObject("Bang");
@@ -197,6 +202,7 @@ public static class LastWhistleSceneBuilder
     {
         if (Object.FindObjectOfType<GameClock>() == null) new GameObject("GameClock").AddComponent<GameClock>();
         if (Object.FindObjectOfType<FighterStats>() == null) new GameObject("FighterStats").AddComponent<FighterStats>();
+        if (Object.FindObjectOfType<GameState>() == null) new GameObject("GameState").AddComponent<GameState>();
     }
 
     static Camera NewCam(float size)
